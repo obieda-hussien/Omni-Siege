@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Omni Siege</string>
+    <string name="subtitle">NATIVE PHYSICS ARENA</string>
+    <string name="build_phase">BUILD YOUR FORTRESS</string>
+    <string name="battle_phase">TARGET PRACTICE</string>
+    <string name="victory">TARGET DESTROYED</string>
+    <string name="defeat">YOUR CORE WAS LOST</string>
+    <string name="money">Resources: %1$d</string>
+    <string name="enemy_core">TARGET CORE %1$d%%</string>
+    <string name="wood">Wood · 25</string>
+    <string name="stone">Stone · 40</string>
+    <string name="start_battle">Start battle</string>
+    <string name="new_round">New arena</string>
+    <string name="fire">FIRE</string>
+    <string name="angle">Angle %1$d°</string>
+    <string name="power">Power %1$d</string>
+    <string name="build_hint">Tap on your side to place supported blocks. Protect the blue core.</string>
+    <string name="battle_hint">Adjust your cannon angle and power. Destroy the red target core.</string>
+    <string name="end_hint">Target practice complete. The AI opponent comes in a later phase.</string>
+    <string name="mode_label">OFFLINE PROTOTYPE · NO BOT YET</string>
+</resources>
