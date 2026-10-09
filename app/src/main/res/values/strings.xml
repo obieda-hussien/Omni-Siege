@@ -3,9 +3,9 @@
     <string name="app_name">OMNI SIEGE</string>
     <string name="subtitle">CASTLE BATTLE</string>
     <string name="build_phase">FORTIFY YOUR CASTLE</string>
-    <string name="battle_phase">BATTLE IN PROGRESS</string>
-    <string name="victory">TARGET DESTROYED!</string>
-    <string name="defeat">FORTRESS LOST</string>
+    <string name="battle_phase">AI BATTLE LIVE</string>
+    <string name="victory">VICTORY!</string>
+    <string name="defeat">DEFEAT!</string>
     <string name="money">%1$d</string>
     <string name="enemy_core">ENEMY CORE · %1$d%%</string>
     <string name="wood">TIMBER</string>
@@ -17,10 +17,10 @@
     <string name="fire">LAUNCH</string>
     <string name="angle">%1$d°</string>
     <string name="power">%1$d</string>
-    <string name="build_hint">Tap the ground or stack blocks to reinforce your fortress.</string>
-    <string name="battle_hint">Drag on the arena to aim, then launch your attack.</string>
-    <string name="end_hint">Your practice target is down. AI opponents are coming later.</string>
-    <string name="mode_label">OFFLINE · TARGET PRACTICE</string>
+    <string name="build_hint">Tap or drag pieces onto supports. Protect your blue core.</string>
+    <string name="battle_hint">Drag to aim. Attack before Evo Bot breaks your castle.</string>
+    <string name="end_hint">Evo Bot fought you with tactical targeting. Train smarter bots later.</string>
+    <string name="mode_label">OFFLINE · EVO BOT</string>
     <string name="undo">UNDO</string>
     <string name="scout">SCOUT</string>
     <string name="home">HOME</string>
@@ -37,4 +37,13 @@
     <string name="your_core">YOUR FORTRESS</string>
     <string name="tap_hint">Tap the battlefield to place a block</string>
     <string name="ai_coming">AI OPPONENT · COMING SOON</string>
+    <string name="player_health">YOU %1$d%%</string>
+    <string name="bot_health">EVO BOT %1$d%%</string>
+    <string name="bot_plan_core">CORE ATTACK</string>
+    <string name="bot_plan_support">SUPPORT BREAKER</string>
+    <string name="bot_plan_high">TOWER HUNTER</string>
+    <string name="bot_plan_weak">WEAK-POINT HUNTER</string>
+    <string name="tie">DRAW!</string>
+    <string name="bot_ready">BOT ACTIVE</string>
+    <string name="seconds_left">%1$d:%2$02d</string>
 </resources>
