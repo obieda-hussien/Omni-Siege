@@ -52,8 +52,8 @@ fun SiegeScreen() {
     val frame=game.frame
     var material by remember { mutableIntStateOf(0) }
     var weapon by remember { mutableIntStateOf(0) }
-    var angle by remember { mutableFloatStateOf(23f) }
-    var power by remember { mutableFloatStateOf(970f) }
+    var angle by remember { mutableFloatStateOf(32f) }
+    var power by remember { mutableFloatStateOf(840f) }
     var cameraX by remember { mutableFloatStateOf(350f) }
     var scout by remember { mutableStateOf(false) }
 
@@ -484,9 +484,6 @@ private fun DrawScope.drawWorld(frame:SiegeSnapshot,angle:Float,power:Float) {
                 drawLine(Color(0xFF775C5B),Offset(block.x-9f,block.y-11f),
                     Offset(block.x+7f,block.y+9f),2.2f)
             }
-        }
-        if (block.falling) {
-            drawCircle(Sun.copy(alpha=0.35f),block.width*0.45f,Offset(block.x,block.y))
         }
     }
     // Burgundy rooftops add the readable medieval silhouette seen in the reference.
