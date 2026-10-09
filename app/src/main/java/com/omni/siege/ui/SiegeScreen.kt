@@ -34,8 +34,8 @@ import com.omni.siege.engine.*
 import kotlinx.coroutines.isActive
 import kotlin.math.*
 
-private const val VIEW_WIDTH=720f
-private const val CAMERA_TOP=110f
+private const val VIEW_WIDTH=600f
+private const val CAMERA_TOP=20f
 private const val MAP_WIDTH=1840f
 private const val TERRAIN_Y=1000f
 private const val GRAVITY=420f
@@ -56,6 +56,7 @@ fun SiegeScreen() {
     var power by remember { mutableFloatStateOf(840f) }
     var cameraX by remember { mutableFloatStateOf(350f) }
     var scout by remember { mutableStateOf(false) }
+    var buildGhost by remember { mutableStateOf<Offset?>(null) }
 
     // Smoothly follow live missiles; player can also scout the target castle.
     LaunchedEffect(game) {
@@ -69,7 +70,8 @@ fun SiegeScreen() {
                 val target=when {
                     scout -> 1510f
                     game.frame.projectiles.isNotEmpty() ->
-                        game.frame.projectiles.last().x.coerceIn(350f,1510f)
+                        (game.frame.projectiles.lastOrNull { it.owner==0 }
+                            ?: game.frame.projectiles.last()).x.coerceIn(350f,1510f)
                     game.frame.explosions.isNotEmpty() ->
                         game.frame.explosions.last().x.coerceIn(350f,1510f)
                     else -> 350f
@@ -91,6 +93,25 @@ fun SiegeScreen() {
                         }
                     }
                 }
+                .pointerInput(frame.phase,material,scout) {
+                    if(frame.phase==0 && !scout) {
+                        detectDragGestures(
+                            onDragStart={buildGhost=it},
+                            onDragEnd={
+                                buildGhost?.let { at ->
+                                    val s=size.width/VIEW_WIDTH
+                                    val left=(cameraX-VIEW_WIDTH/2f).coerceIn(0f,MAP_WIDTH-VIEW_WIDTH)
+                                    game.place(at.x/s+left,at.y/s+CAMERA_TOP,material)
+                                }
+                                buildGhost=null
+                            },
+                            onDragCancel={buildGhost=null}
+                        ) { change,_ ->
+                            change.consume()
+                            buildGhost=change.position
+                        }
+                    }
+                }
                 .pointerInput(frame.phase) {
                     if (frame.phase==1) {
                         detectDragGestures { change,delta ->
@@ -109,6 +130,18 @@ fun SiegeScreen() {
                 scale(s,s,pivot=Offset.Zero)
             }) {
                 drawWorld(frame,angle,power)
+                if(frame.phase==0 && buildGhost!=null){
+                    val tile=buildGhost!!
+                    val rawX=tile.x/s+left
+                    val rawY=tile.y/s+CAMERA_TOP
+                    val blockX=174f+round((rawX-174f)/44f)*44f
+                    val blockY=985f-round((985f-rawY)/30f)*30f
+                    drawRoundRect(
+                        color=(if(material==0) Sun else Turquoise).copy(alpha=0.36f),
+                        topLeft=Offset(blockX-22f,blockY-15f),size=Size(44f,30f),
+                        cornerRadius=CornerRadius(4f)
+                    )
+                }
             }
         }
 
@@ -134,8 +167,11 @@ fun SiegeScreen() {
                 }
                 GlassPill {
                     Column(horizontalAlignment=Alignment.End) {
-                        Text(stringResource(R.string.level),fontSize=13.sp,
-                            fontWeight=FontWeight.ExtraBold,color=Sun)
+                        Text(
+                            if(frame.phase==1) stringResource(R.string.seconds_left,
+                                frame.timeLeft.toInt()/60,frame.timeLeft.toInt()%60)
+                            else stringResource(R.string.level),
+                            fontSize=15.sp,fontWeight=FontWeight.ExtraBold,color=Sun)
                         Text(stringResource(R.string.mode_label),fontSize=9.sp,color=Cream)
                     }
                 }
@@ -148,14 +184,31 @@ fun SiegeScreen() {
                 GlassPill {
                     Text("♥",fontSize=15.sp,color=Coral)
                     Spacer(Modifier.width(5.dp))
-                    Text(stringResource(R.string.enemy_core,frame.enemyCorePercent),
+                    Text(stringResource(R.string.player_health,frame.playerCorePercent),
                         fontWeight=FontWeight.Bold,fontSize=11.sp,color=Color.White)
                 }
                 GlassPill {
-                    Text("◈",color=Sun,fontSize=15.sp)
+                    Text("⚔",color=Coral,fontSize=15.sp)
                     Spacer(Modifier.width(5.dp))
-                    Text(stringResource(R.string.money,frame.resources),
-                        color=Color.White,fontSize=13.sp,fontWeight=FontWeight.Bold)
+                    Text(stringResource(R.string.bot_health,frame.enemyCorePercent),
+                        color=Color.White,fontSize=12.sp,fontWeight=FontWeight.Bold)
+                }
+            }
+            if(frame.phase==1){
+                Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
+                    GlassPill {
+                        Text("● ",fontSize=11.sp,color=Coral)
+                        Text(stringResource(when(frame.botPlan) {
+                            1 -> R.string.bot_plan_support
+                            2 -> R.string.bot_plan_high
+                            3 -> R.string.bot_plan_weak
+                            else -> R.string.bot_plan_core
+                        }),fontSize=10.sp,color=Color.White,fontWeight=FontWeight.Bold)
+                    }
+                    GlassPill {
+                        Text(stringResource(R.string.bot_ready),fontSize=10.sp,
+                            color=Turquoise,fontWeight=FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -263,7 +316,11 @@ fun SiegeScreen() {
                 }
                 else -> {
                     GamePanel {
-                        Text(stringResource(if (frame.winner==0) R.string.victory else R.string.defeat),
+                        Text(stringResource(when(frame.winner) {
+                            0 -> R.string.victory
+                            1 -> R.string.defeat
+                            else -> R.string.tie
+                        }),
                             fontSize=22.sp,fontWeight=FontWeight.Black,color=Sun)
                         Spacer(Modifier.height(5.dp))
                         Text(stringResource(R.string.end_hint),color=Color.White,fontSize=12.sp)
@@ -466,6 +523,9 @@ private fun DrawScope.drawWorld(frame:SiegeSnapshot,angle:Float,power:Float) {
             1 -> Color(0xFFD2CDBD)
             else -> if(allied) Color(0xFF53D6E8) else Color(0xFFFF8C91)
         }
+        withTransform({
+            rotate(block.rotation*180f/PI.toFloat(),pivot=Offset(block.x,block.y))
+        }) {
         drawRoundRect(fill,Offset(block.x-block.width/2f,block.y-block.height/2f),
             Size(block.width-1f,block.height-1f),CornerRadius(3f))
         drawRoundRect(outline.copy(alpha=0.72f),
@@ -484,6 +544,11 @@ private fun DrawScope.drawWorld(frame:SiegeSnapshot,angle:Float,power:Float) {
                 drawLine(Color(0xFF775C5B),Offset(block.x-9f,block.y-11f),
                     Offset(block.x+7f,block.y+9f),2.2f)
             }
+        }
+        }
+        if(block.falling) {
+            drawCircle(Sun.copy(alpha=0.22f),block.width*0.53f,
+                Offset(block.x,block.y))
         }
     }
     // Burgundy rooftops add the readable medieval silhouette seen in the reference.
@@ -519,8 +584,9 @@ private fun DrawScope.drawWorld(frame:SiegeSnapshot,angle:Float,power:Float) {
         }
     }
     cannon(165f,892f,angle)
+    cannon(1665f,892f,38f,leftFacing=true)
     frame.projectiles.forEach { shot ->
-        val tone=if(shot.weapon==2) Color(0xFFFE86CC) else Sun
+        val tone=if(shot.owner==1) Coral else if(shot.weapon==2) Color(0xFFFE86CC) else Sun
         drawLine(Color(0xFF49555E).copy(alpha=0.48f),
             Offset(shot.x-shot.vx*0.085f,shot.y-shot.vy*0.085f),
             Offset(shot.x,shot.y),strokeWidth=shot.radius*1.4f)
@@ -529,6 +595,10 @@ private fun DrawScope.drawWorld(frame:SiegeSnapshot,angle:Float,power:Float) {
             Offset(shot.x,shot.y),strokeWidth=shot.radius*0.72f)
         drawCircle(tone,shot.radius*1.25f,Offset(shot.x,shot.y))
         drawCircle(Cream,shot.radius*0.54f,Offset(shot.x,shot.y))
+    }
+    frame.debris.forEach { piece ->
+        drawCircle(Color(0xFFEEDCC5).copy(alpha=(piece.life/1.2f).coerceIn(0f,1f)),
+            piece.size,Offset(piece.x,piece.y))
     }
     frame.explosions.forEach { blast ->
         val age=(blast.age/0.85f).coerceIn(0f,1f)
@@ -562,12 +632,13 @@ private fun DrawScope.wagon(x:Float,y:Float,accent:Color) {
         drawLine(Color(0x663B241D),Offset(p,y-40f),Offset(p+5f,y-22f),2f)
     }
 }
-private fun DrawScope.cannon(x:Float,y:Float,angle:Float) {
+private fun DrawScope.cannon(x:Float,y:Float,angle:Float,leftFacing:Boolean=false) {
     val rad=angle*PI.toFloat()/180f
     drawRoundRect(Color(0xFF4F6B76),Offset(x-30f,y+10f),Size(60f,32f),CornerRadius(8f))
     drawCircle(Color(0xFF1B303F),21f,Offset(x,y+27f))
     drawCircle(Color(0xFF8EB7C1),10f,Offset(x,y+27f))
-    val muzzle=Offset(x+cos(rad)*70f,y-29f-sin(rad)*70f)
+    val direction=if(leftFacing) -1f else 1f
+    val muzzle=Offset(x+direction*cos(rad)*70f,y-29f-sin(rad)*70f)
     drawLine(Color(0xFF253A4C),Offset(x,y-29f),muzzle,strokeWidth=19f)
     drawLine(Color(0xFFC5DBD8),Offset(x,y-29f),muzzle,strokeWidth=10f)
     drawCircle(Sun,11f,Offset(x,y-29f))
