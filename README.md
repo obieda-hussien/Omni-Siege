@@ -1,60 +1,54 @@
 # Omni Siege
 
-**Android-native physics castle siege — Kotlin + Jetpack Compose + C++/NDK.**
+**Portrait-first Android castle siege game** built entirely with **Kotlin + Jetpack Compose + C++17 / Android NDK**.
 
-> **Status: playable foundation / target-practice prototype.** The AI opponent, learning, sophisticated stress solver, replay, persistence and effects are not implemented yet.
+> Current milestone: a more polished portrait **target practice** prototype. The enemy fortress is static. AI bots, on-device neural training and production-quality dynamic fracture are future milestones, not completed features.
 
-## What's playable now
-1. Open the game in landscape.
-2. In **Build** mode, tap the left side of the field to stack supported wooden or stone blocks. Resources and overlap constraints are enforced in the C++ engine.
-3. Tap **Start battle** to enter the real-time simulation.
-4. Set angle and launch speed, then tap **Fire**. Projectiles follow gravity, damage nearby blocks, and can break support connections.
-5. Destroy the red training core. Tap **New arena** to restart.
+## Portrait gameplay
 
-There is **no combat AI** in this milestone. The red fort is an unmoving training target; the blue player has a practice cannon.
+Inspired by portrait physics-siege games: tall sky and layered mountains, curved ridge between combatants, rolling camera following rockets, stone-and-timber fortresses on wheeled bases, tracer smoke, explosions and debris accents. All prototype artwork is procedural Canvas rendering with no copyrighted game assets.
+
+1. **Build**: tap on the left fortress to place blocks. Choose TIMBER or STONE, spend resources, use UNDO for your last placed block.
+2. Tap **START BATTLE**.
+3. **Aim**: drag across the gameplay canvas vertically for angle and horizontally for launch strength. The aiming arc shows an approximate trajectory.
+4. **Choose a weapon**: CANNON (unlimited), SALVO (3 projectiles, five charges), BLAST (large area impact, two charges).
+5. Tap **LAUNCH**, watch the camera track the projectiles. Use **SCOUT / HOME** to inspect the target.
+6. Break the red core and tap **PLAY AGAIN**.
+
+The entire activity is locked to **portrait**, including on Android 11. No Unity dependency.
 
 ## Architecture
 
-- **Kotlin + Jetpack Compose**: activity, responsive landscape HUD, build/tap controls, sliders, canvas rendering.
-- **C++17 + NDK (JNI)**: authoritative state, build validation, ballistic simulation, radial damage, coarse connectivity-based collapse, game phase and win handling.
-- **CMake**: Android shared library and separate native host tests.
-- **Strings resources**: all interface copy in `app/src/main/res/values/strings.xml`.
+- **Compose**: insets-aware game HUD, build palette, weapon cards, landscape-independent gestures, vector battle scene.
+- **C++**: authoritative construction and ammo constraints, target castle, ballistics, curved collision terrain, shot cooldowns, impact damage, simplified support/collapse, effect events.
+- **JNI v2**: immutable snapshot with bounded block/projectile/explosion arrays.
+- **Android SDK 35**, NDK `27.0.12077973`, JDK 17, CMake 3.22.1, AGP 8.7.3, Gradle 8.9.
 
-The simulation uses bounded internal substeps (maximum 1/120 s). It is **an initial arcade physics implementation**, not yet a validated real-world stress model or full Box2D solver. Falling blocks are simplified and do not yet simulate arbitrary rotation.
-
-## Build
-
-Requires JDK 17, Android SDK 35, Android NDK `27.0.12077973`, CMake 3.22.1+, and Gradle 8.9. The project uses Android Gradle Plugin 8.7.3 and Kotlin 2.0.21.
-
-With Gradle installed:
+## Build and tests
 
 ```bash
 gradle :app:assembleDebug
-```
-
-Debug APK: `app/build/outputs/apk/debug/app-debug.apk`.
-
-### Native unit tests (without Android SDK)
-
-```bash
 cmake -S app/src/main/cpp -B build-native
 cmake --build build-native
 ctest --test-dir build-native --output-on-failure
 ```
 
-GitHub Actions builds the Android debug APK and runs native unit tests on pushes and pull requests.
+GitHub Actions builds a Debug APK and runs native tests; look for `omni-siege-debug` in the workflow artifacts.
 
-## Planned implementation order
-1. Improve structural physics (joints, rotation, debris, collision sweep, stress/damage) and rendering quality.
-2. Add build previews, undo/redo, reusable blueprints and resource balancing.
-3. Add responsive live combat, repair tools, more weapons, match timer, persistence, audio and replay.
-4. **Only then** add a rules-based bot and on-device AI training arena.
-5. Measure device performance (especially Android 11 low-memory devices), then introduce local self-play, compact models and optional evolution modes.
+## Current limitations (intentional)
 
-**On-device AI plan:** use headless accelerated simulations and lightweight algorithms such as mutation/selection or contextual bandits first, then test small policy networks and local gradient updates only when measured improvements justify their cost. No remote inference or compulsory PC training.
+- **Not an AI opponent yet**: the opposing castle is a practice target and never fires.
+- Block collapse is vertical and support-based; rotation, bending, real material stress, collision manifolds and full destruction debris are not yet modeled.
+- Generated smoke and shards are cosmetic; there are no imported graphics or sound assets yet.
+- No local training, user save games, advanced blueprint editing or opponent turns yet.
+- Android emulator/CI building does not substitute for performance testing on a real phone.
 
-## Integrity and boundaries
-- Native C++ is the source of truth for build resources and world state.
-- JNI snapshot v1 contains one header and flat arrays, with bounds checking on the Kotlin side.
-- Input coordinates and launch parameters are checked in native code.
-- No INTERNET permission, analytics or invasive device permissions.
+## Roadmap
+
+1. Polish physics correctness, touch response, dynamic camera and visuals on real Android devices.
+2. Add undoable blueprints, drag placements, larger building variety, multi-level missions, sounds and replay.
+3. Add a fully fair rule-based bot using the exact same simulation observations and actions as the player.
+4. Create an optional **on-device Evolution Lab** using accelerated headless simulated episodes, mutation/selection or contextual bandits first, then compact policy networks only if they outperform cheaper approaches.
+5. Provide training limits for heat, battery, background work and memory.
+
+This game needs no INTERNET permission for gameplay.
